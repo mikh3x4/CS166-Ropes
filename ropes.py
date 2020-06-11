@@ -1,4 +1,14 @@
 
+# Michal Adamkiewicz
+# mikadam@stanford.edu
+# Done for CS166 final project
+
+# Visualization of a rope backed text editor. Currently edited nodes
+# are highlighted red. Supports cut copy and paste (although cut isn't real
+# as it just rebuilds the rope
+
+# Needs matplotlib, networkx and tkinter to work
+
 import tkinter as tk
 from functools import reduce
 
@@ -7,7 +17,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-
 
 class Rope:
     MAX_LEAF = 5
@@ -385,7 +394,6 @@ class RopesViz:
             self.redraw()
 
         self.root.after(0,self.move_cursor)
-
 
 if __name__ == '__main__':
     r = RopesViz()
