@@ -183,7 +183,10 @@ class Rope:
 
 
     def get_balanced_subropes(self):
-        if self.is_balanced():
+        # paper says rebalancing can treat balanced subtrees
+        # as one but we aren't speed constrained here
+        # if self.is_balanced():
+        if self.is_leaf():
             yield self
 
         else:

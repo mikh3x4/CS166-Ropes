@@ -18,9 +18,13 @@ Features
 Demo
 ---
 
-GIF
-GIF
-GIF
+![Demo 1](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/gif1.gif)
+
+![Demo 2](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/gif2.gif)
+
+![Demo 3](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/gif3.gif)
+
+![Demo 4](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/gif4.gif)
 
 Installation
 ---
