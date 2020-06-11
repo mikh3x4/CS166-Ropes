@@ -187,8 +187,7 @@ class Rope:
 
         if self.is_leaf():
             graph.add_node(id(self), 
-                           label=str(self.total_lenth)+self.leaf_str,
-                                                          pos=loc, col = col)
+                           label=self.leaf_str, pos=loc, col = col)
         else:
             graph.add_node(id(self),
                            label=str(self.left_length)+","+str(self.total_lenth), 
@@ -240,8 +239,16 @@ class RopesViz:
         self.text.bind('<Key>', self.process_event)
         self.text.bind('<Button-1>', self.mouse_click)
 
+        self.text.bind('<<Copy>>', lambda e: "pass")
+        self.text.bind('<<Cut>>', lambda e: "break") # Cutting not supported
+        self.text.bind('<<Paste>>', self.paste)
+
         self.redraw()
         self.root.mainloop()
+
+    def paste(self, event):
+        self.rope.add_character(self.root.clipboard_get())
+        self.redraw()
 
     def redraw(self):
         graph = self.rope.get_graph()
@@ -271,6 +278,9 @@ class RopesViz:
         self.root.after(0,self.move_cursor)
 
     def process_event(self, event):
+        print(event.char)
+        print(event.keysym)
+        print(event.keycode)
         if event.keysym == "BackSpace":
             self.rope.remove_character()
             self.redraw()
