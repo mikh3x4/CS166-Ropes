@@ -66,9 +66,9 @@ class Rope:
             else:
                 self.position = None
 
-        print("left_length", self.left_length)
-        print("total_lenth", self.total_lenth)
-        print("position", self.position)
+        # print("left_length", self.left_length)
+        # print("total_lenth", self.total_lenth)
+        # print("position", self.position)
 
         if self.left_length == 0:
             self.replace(self.right_branch)
