@@ -28,7 +28,7 @@ class Rope:
             self.split()
 
     def update(self):
-        if self.is_leaf()
+        if self.is_leaf():
             return
 
         self.left_length = self.left_branch.total_lenth
@@ -45,8 +45,8 @@ class Rope:
 
         length = len(self.leaf_str)
 
-        left  = self.leaf_str[:length/2]
-        right = self.leaf_str[length/2:]
+        left  = self.leaf_str[:length//2]
+        right = self.leaf_str[length//2:]
 
         self.left_branch = Rope(left, self)
         self.right_branch = Rope(right, self)
@@ -69,7 +69,7 @@ class Rope:
 
     def add_character(self, i, char):
         total_lenth += 1
-        if self.is_leaf()
+        if self.is_leaf():
             self.leaf_str += char
             if len(self.leaf_str) > self.MAX_LEAF:
                 self.split()
@@ -88,10 +88,13 @@ class Rope:
         pass
 
     def is_balanced(self):
-        return self.fibonacci(self.depth + 2) =< self.left_length
+        return self.fibonacci(self.depth + 2) <= self.left_length
 
     def is_leaf(self):
         return self.leaf_str != None
+
+    def is_left_child(self):
+        return self.parent.left_branch is self
 
     def get_leafs(self):
         if self.leaf_str != None:
@@ -102,7 +105,25 @@ class Rope:
             yield from self.right_branch.get_leafs()
 
     def get_graph(self):
-        pass
+        graph = nx.DiGraph()
+        self.add_to_graph(graph, (0,0) )
+        return graph
+            
+    def add_to_graph(self, graph, loc):
+
+        if self.is_leaf():
+            graph.add_node(id(self), label=self.leaf_str, pos=loc, col = "red")
+        else:
+        
+            graph.add_node(id(self), label='test', pos=loc, col="blue")
+            offset = 2**(self.depth)
+            self.left_branch.add_to_graph(graph,
+                                          (loc[0] - offset, loc[1]-1))
+            self.right_branch.add_to_graph(graph,
+                                          (loc[0] + offset, loc[1]-1))
+
+            graph.add_edge( id(self), id(self.left_branch) )
+            graph.add_edge( id(self), id(self.right_branch) )
 
     
     
@@ -120,52 +141,6 @@ class Rope:
             return cls.fib_store[n]
         
 
-text = "Hello_CS166_people,_this_is_a_test"
-
-graph = nx.DiGraph()
-
-nodes = [ "Hello_",
-            "CS166",
-            "_peop",
-            "le,_t",
-            "his_is",
-            "_a_tes",
-            "t"]
-
-i = 1
-for x in nodes:
-    graph.add_node(x, label =x, pos=(i,1))
-    i += 1
-
-while 1:
-    new_nodes = []
-
-    while len(nodes) > 1:
-        a = nodes.pop(0)
-        b = nodes.pop(0)
-        j = a+b
-
-        a_pos = graph.nodes[a]['pos']
-        b_pos = graph.nodes[b]['pos']
-
-        x_pos = (a_pos[0] + b_pos[0])/2
-
-        y_pos = max(a_pos[1], b_pos[1]) + 1
-
-        graph.add_node(j, label =j, pos = ( x_pos, y_pos ) )
-
-        graph.add_edge(j, a)
-        graph.add_edge(j, b)
-        new_nodes.append(j) 
-
-    if len(nodes) != 0:
-        new_nodes.append(nodes.pop(0))
-
-    nodes = new_nodes
-    if len(nodes) == 1:
-        break
-
-
 class RopesViz:
     def __init__(self):
 
@@ -175,11 +150,18 @@ class RopesViz:
         fig = Figure(figsize=(5, 4))
         ax = fig.add_subplot(111)
 
-        pos = { n:graph.nodes[n]['pos'] for n in graph.nodes()  } 
-        col = ["#2679B2"] * len(graph.nodes)
-        col[3] = 'red'
+        self.rope = Rope("This is a long test Magic hello")
 
-        nx.draw(graph, pos, ax, with_labels=True, node_color = col)
+        for leaf in self.rope.get_leafs():
+            print(leaf)
+
+        graph = self.rope.get_graph()
+
+        pos   = { n:graph.nodes[n]['pos'] for n in graph.nodes()  } 
+        lab = { n:graph.nodes[n]['label'] for n in graph.nodes()  } 
+        col =   [graph.nodes[n]['col'] for n in graph.nodes()]
+
+        nx.draw(graph,pos,ax,with_labels=True, node_color = col, labels = lab)
 
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas.draw()
