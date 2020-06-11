@@ -1,5 +1,6 @@
 
 import tkinter as tk
+from functools import reduce
 
 import networkx as nx
 
@@ -27,8 +28,20 @@ class Rope:
         if len(self.leaf_str) > self.MAX_LEAF:
             self.split()
 
+    @classmethod
+    def fromConcatination(cls, left, right):
+        out = Rope("")
+        out.leaf_str = None
+        out.left_branch = left
+        out.right_branch = right
+        out.update()
+        return out
+
     def update(self):
-        if not self.is_leaf():
+        if self.is_leaf():
+            self.depth = 0
+            self.total_lenth = len(self.leaf_str)
+        else:
             self.left_length = self.left_branch.total_lenth
             self.total_lenth = self.left_branch.total_lenth \
                              + self.right_branch.total_lenth
@@ -93,7 +106,30 @@ class Rope:
 
     ## BALANCING METHODS
     def rebalance(self):
-        pass
+        if self.is_balanced():
+            return self
+
+        print("rebalancing")
+        sequence = []
+        for rope in self.get_balanced_subropes():
+            i = 0
+            while 1:
+                while( rope.total_lenth < self.fibonacci(i) ):
+                    i += 1
+                while( i >= len(sequence) ):
+                    sequence.append(None)
+
+                if sequence[i] is None:
+                    sequence[i] = rope
+                    break
+                else:
+                    rope = Rope.fromConcatination(sequence[i], rope)
+                    sequence[i] = None
+
+        ropes = reversed(list(filter( lambda x: x is not None, sequence)))
+        return reduce(  lambda x,y: Rope.fromConcatination(y,x), ropes)
+
+
 
     def get_balanced_subropes(self):
         if self.is_balanced():
@@ -195,6 +231,8 @@ class Rope:
     def add_to_graph(self, graph, loc):
 
         col = "#FFAAAA" if self.position is not None else "#AAAAFF"
+        if not self.is_balanced():
+            col = "#AAFFAA"
 
         if self.is_leaf():
             graph.add_node(id(self), 
@@ -300,6 +338,7 @@ class RopesViz:
         elif( event.char.isprintable() and len(event.char)==1 ):
             print("adding char")
             self.rope.add_character(event.char)
+            self.rope = self.rope.rebalance()
             self.redraw()
 
         self.root.after(0,self.move_cursor)
