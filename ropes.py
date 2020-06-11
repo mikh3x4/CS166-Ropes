@@ -157,8 +157,8 @@ class Rope:
                     rope = Rope.fromConcatination(sequence[i], rope)
                     sequence[i] = None
 
-        ropes = filter( lambda x: x is not None, sequence)
-        return reduce(  lambda x,y: Rope.fromConcatination(x,y), ropes)
+        ropes = reversed(list(filter( lambda x: x is not None, sequence)))
+        return reduce(  lambda x,y: Rope.fromConcatination(y,x), ropes)
 
 
 
@@ -236,10 +236,10 @@ class Rope:
     ## GRAPH DRAWING
     def get_graph(self):
         graph = nx.DiGraph()
-        self.add_to_graph(graph, (0,0) )
+        self.add_to_graph(graph, (0,0), 0)
         return graph
             
-    def add_to_graph(self, graph, loc):
+    def add_to_graph(self, graph, loc, size):
 
         col = "#FFAAAA" if self.position is not None else "#AAAAFF"
         # if not self.is_balanced():
@@ -252,11 +252,11 @@ class Rope:
             graph.add_node(id(self),
                            label=str(self.left_length)+","+str(self.total_lenth), 
                                                           pos=loc, col=col)
-            offset = 2**(self.depth)
+            offset = 2**(size)
             self.left_branch.add_to_graph(graph,
-                                          (loc[0] - offset, loc[1]-1))
+                                          (loc[0] - offset, loc[1]-1), size-1)
             self.right_branch.add_to_graph(graph,
-                                          (loc[0] + offset, loc[1]-1))
+                                          (loc[0] + offset, loc[1]-1), size-1)
 
             graph.add_edge( id(self), id(self.left_branch) )
             graph.add_edge( id(self), id(self.right_branch) )
@@ -280,7 +280,7 @@ class RopesViz:
     def __init__(self):
 
         self.root = tk.Tk()
-        self.root.title("Ropes")
+        self.root.title("Rope Visualization")
 
         self.fig = Figure(figsize=(5, 4))
         self.ax = self.fig.add_subplot(111)
@@ -292,7 +292,7 @@ class RopesViz:
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
         self.text = tk.Text(self.root)
-        self.text.pack()
+        self.text.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         self.text.insert('0.0', default_text)
 
         self.text.bind('<Key>', self.process_event)
