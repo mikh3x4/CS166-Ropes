@@ -22,7 +22,9 @@ class Rope:
         self.left_branch = None        # pointer to left branch
         self.right_branch = None       # pointer to right branch
 
-        self.leaf_str = string.replace(" ","_")
+        self.leaf_str = string
+        self.leaf_str = self.leaf_str.replace(" ","_")
+        self.leaf_str = self.leaf_str.replace("\n","")
 
         #split and rebalance
         if len(self.leaf_str) > self.MAX_LEAF:
@@ -58,7 +60,7 @@ class Rope:
         if self.left_length == 0:
             self.replace(self.right_branch)
         elif self.left_length == self.total_lenth:
-            self.replace(self.left_length_branch)
+            self.replace(self.left_length)
 
         if self.depth == 1 and self.total_lenth <= self.MAX_LEAF:
             self.merge()
@@ -104,20 +106,49 @@ class Rope:
         self.leaf_str = None
         self.update()
 
+    ## CHECK STATES
+    def is_balanced(self):
+        if self.is_leaf():
+            assert self.fibonacci(self.depth + 2) <= self.total_lenth
+        return self.fibonacci(self.depth + 2) <= self.total_lenth
+
+    def is_leaf(self):
+        return self.leaf_str != None
+
+    def is_left_child(self):
+        return self.parent.left_branch is self
+
+    def get_leafs(self):
+        if self.leaf_str != None:
+            yield self.leaf_str
+
+        else:
+            yield from self.left_branch.get_leafs()
+            yield from self.right_branch.get_leafs()
+
     ## BALANCING METHODS
     def rebalance(self):
+        # algoryth straight from 
+        # Ropes: an Alternative to Strings
+        # https://www.cs.rit.edu/usr/local/pub/jeh/courses/QUARTERS/FP/Labs/CedarRope/rope-paper.pdf
+
         if self.is_balanced():
             return self
 
         print("rebalancing")
         sequence = []
+
         for rope in self.get_balanced_subropes():
-            i = 0
+            i = 2
             while 1:
-                while( rope.total_lenth < self.fibonacci(i) ):
+                while( rope.total_lenth >= self.fibonacci(i) ):
                     i += 1
                 while( i >= len(sequence) ):
                     sequence.append(None)
+
+                # print("total_lenth", rope.total_lenth)
+                # print([ self.fibonacci(i) if sequence[i] is not None else None \
+                #                  for i in range(len(sequence))])
 
                 if sequence[i] is None:
                     sequence[i] = rope
@@ -126,8 +157,8 @@ class Rope:
                     rope = Rope.fromConcatination(sequence[i], rope)
                     sequence[i] = None
 
-        ropes = reversed(list(filter( lambda x: x is not None, sequence)))
-        return reduce(  lambda x,y: Rope.fromConcatination(y,x), ropes)
+        ropes = filter( lambda x: x is not None, sequence)
+        return reduce(  lambda x,y: Rope.fromConcatination(x,y), ropes)
 
 
 
@@ -202,26 +233,6 @@ class Rope:
         print("removed from node depth", 
               self.depth, "with new pos", self.position)
 
-    ## CHECK STATES
-    def is_balanced(self):
-        if self.is_leaf():
-            assert self.fibonacci(self.depth + 2) <= self.total_lenth
-        return self.fibonacci(self.depth + 2) <= self.total_lenth
-
-    def is_leaf(self):
-        return self.leaf_str != None
-
-    def is_left_child(self):
-        return self.parent.left_branch is self
-
-    def get_leafs(self):
-        if self.leaf_str != None:
-            yield self.leaf_str
-
-        else:
-            yield from self.left_branch.get_leafs()
-            yield from self.right_branch.get_leafs()
-
     ## GRAPH DRAWING
     def get_graph(self):
         graph = nx.DiGraph()
@@ -231,8 +242,8 @@ class Rope:
     def add_to_graph(self, graph, loc):
 
         col = "#FFAAAA" if self.position is not None else "#AAAAFF"
-        if not self.is_balanced():
-            col = "#AAFFAA"
+        # if not self.is_balanced():
+        #     col = "#AAFFAA"
 
         if self.is_leaf():
             graph.add_node(id(self), 
@@ -251,7 +262,6 @@ class Rope:
             graph.add_edge( id(self), id(self.right_branch) )
 
     ## FIBONACCI HELPER
-    
     fib_store = [0, 1]
     @classmethod
     def fibonacci(cls, n):
@@ -315,13 +325,16 @@ class RopesViz:
     # but *before* updating the cursor position. This hack schedules to run
     # *after* the cursor position is updated
     def move_cursor(self):
-        index =  int(self.text.index("insert").split('.')[1])
+        line, char =  self.text.index("insert").split('.')
+        lines = list(map(lambda x: len(x), self.text.get(1.0,'end').split("\n")))
+        index = sum( lines[: int(line)-1] ) + int(char)
+
         if index != self.rope.position:
             self.rope.move_cursor(index)
             self.redraw()
             print("updated index", index)
 
-        t = self.text.get(1.0,'end')
+        t = self.text.get(1.0,'end').replace("\n","")
         print( t[:index] + "@" + t[index:])
 
     def mouse_click(self,event):
@@ -332,6 +345,8 @@ class RopesViz:
         print(event.keysym)
         print(event.keycode)
         if event.keysym == "BackSpace":
+            if int(self.text.index("insert").split('.')[1]) == 0:
+                return
             self.rope.remove_character()
             self.redraw()
 
