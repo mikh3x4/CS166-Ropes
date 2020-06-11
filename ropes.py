@@ -42,8 +42,33 @@ class Rope:
             else:
                 self.position = None
 
+        if self.left_length == 0:
+            self.replace(self.right_branch)
+        elif self.left_length == self.total_lenth:
+            self.replace(self.left_length_branch)
+
+        if self.depth == 1 and self.total_lenth <= self.MAX_LEAF:
+            self.merge()
+
         if self.parent != None:
             self.parent.update()
+
+    def replace(self, node):
+        self.total_lenth  = node.total_lenth
+        self.depth        = node.depth
+        self.position     = node.position
+        self.left_length  = node.left_length
+        self.left_branch  = node.left_branch
+        self.right_branch = node.right_branch
+    
+    def merge(self):
+        self.depth = 0
+        self.leaf_str = self.left_branch.leaf_str + self.right_branch.leaf_str
+        self.total_lenth = len(self.leaf_str)
+
+        self.left_length = None
+        self.left_branch = None
+        self.right_branch = None
 
     def split(self):
         assert self.is_leaf()
@@ -93,7 +118,7 @@ class Rope:
             self.leaf_str = self.leaf_str[:self.position] \
                             + char \
                             + self.leaf_str[self.position:]
-            self.position += 1
+            self.position += len(char)
             self.total_lenth = len(self.leaf_str)
 
             if len(self.leaf_str) > self.MAX_LEAF:
@@ -111,7 +136,26 @@ class Rope:
               self.depth, "with new pos", self.position)
 
     def remove_character(self):
-        pass
+        assert self.position is not None
+
+        if self.position == 0:
+            return
+
+        if self.is_leaf():
+            self.leaf_str = self.leaf_str[:self.position-1] \
+                            + self.leaf_str[self.position:]
+            self.position -= 1
+            self.total_lenth = len(self.leaf_str)
+            self.update()
+
+        else:
+            if self.position <= self.left_length:
+                self.left_branch.remove_character()
+            else:
+                self.right_branch.remove_character()
+
+        print("removed from node depth", 
+              self.depth, "with new pos", self.position)
 
     ## CHECK STATES
     def is_balanced(self):
@@ -227,7 +271,11 @@ class RopesViz:
         self.root.after(0,self.move_cursor)
 
     def process_event(self, event):
-        if( event.char.isprintable() and len(event.char)==1 ):
+        if event.keysym == "BackSpace":
+            self.rope.remove_character()
+            self.redraw()
+
+        elif( event.char.isprintable() and len(event.char)==1 ):
             print("adding char")
             self.rope.add_character(event.char)
             self.redraw()
