@@ -299,15 +299,27 @@ class RopesViz:
         self.text.bind('<Button-1>', self.mouse_click)
 
         self.text.bind('<<Copy>>', lambda e: "pass")
-        self.text.bind('<<Cut>>', lambda e: "break") # Cutting not supported
+        self.text.bind('<<Cut>>', self.cut)
         self.text.bind('<<Paste>>', self.paste)
 
         self.redraw()
         self.root.mainloop()
 
+    def cut(self, event):
+        # during deletions with a selection (such as during cut)
+        # we give up on incrementally modifying the rope and we just
+        # restart with a new one. Definitely not how it works in practice
+        # but this code is already too much of a mess 
+        self.root.after(0,self.reinitalize)
+
     def paste(self, event):
         self.rope.add_character(self.root.clipboard_get())
         self.redraw()
+
+    def reinitalize(self):
+        t = self.text.get(1.0,'end').replace("\n","")
+        self.rope = Rope(t)
+        self.move_cursor()
 
     def redraw(self):
         graph = self.rope.get_graph()
@@ -345,6 +357,14 @@ class RopesViz:
         print(event.keysym)
         print(event.keycode)
         if event.keysym == "BackSpace":
+            try:
+                self.text.selection_get()
+            except tk.TclError:
+                pass
+            else:
+                self.root.after(0,self.reinitalize)
+                return
+
             if int(self.text.index("insert").split('.')[1]) == 0:
                 return
             self.rope.remove_character()
@@ -352,6 +372,14 @@ class RopesViz:
 
         elif( event.char.isprintable() and len(event.char)==1 ):
             print("adding char")
+            try:
+                self.text.selection_get()
+            except tk.TclError:
+                pass
+            else:
+                self.root.after(0,self.reinitalize)
+                return
+
             self.rope.add_character(event.char)
             self.rope = self.rope.rebalance()
             self.redraw()
