@@ -5,7 +5,7 @@ This is a small GUI vizalization of how the datastructures behind a rope backed 
 
 This project was done for Stanford's [CS166](http://cs166.stanford.edu) datastructures class.
 
-![Screenshot](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/screenshot.png)
+![Screenshot](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/screenshot.png){:height="50%" width="50%"}
 
 Features
 ---
