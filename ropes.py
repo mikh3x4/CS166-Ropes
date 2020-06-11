@@ -185,6 +185,7 @@ class RopesViz:
         self.text.bind('<Button-1>', self.mouse_click)
 
         self.redraw()
+        # self.after(10, self.diff)
         self.root.mainloop()
 
 
@@ -199,18 +200,47 @@ class RopesViz:
         nx.draw(graph,pos,self.ax,with_labels=True, node_color = col, labels = lab)
         self.canvas.draw()
 
+    # def diff(self):
+    #     index =  int(self.text.index("insert").split('.')[1])
+    #     if index != self.rope.position:
+    #         self.rope.move_cursor(index)
+    #         self.redraw()
+        # self.after(10, self.diff)
+
+        # rope = "".join(self.rope.get_leafs())
+        # text = self.text.get(1.0,'end')
+        # if(rope != text):
+        #     pass
+
     def mouse_click(self,event):
-        self.rope.move_cursor( int(self.text.index("insert").split('.')[1]))
-        self.redraw()
+        def d():
+            index =  int(self.text.index("insert").split('.')[1])
+            self.rope.move_cursor(index)
+            self.redraw()
+            print("mouse index", index)
+            t = self.text.get(1.0,'end')
+            print( t[:index] + "@" + t[index:])
+        self.root.after(0,d)
 
     def process_event(self, event):
+        index =  int(self.text.index("insert").split('.')[1])
         if( event.char.isprintable() and len(event.char)==1 ):
+            print("adding char")
             self.rope.add_character(event.char)
+            self.redraw()
+            t = self.text.get(1.0,'end')
+            print( t[:index] + "@" + t[index:])
 
-        self.rope.move_cursor( int(self.text.index("insert").split('.')[1]))
+        if index != self.rope.position:
+            def d():
+                index =  int(self.text.index("insert").split('.')[1])
+                self.rope.move_cursor(index)
+                self.redraw()
+                print("updated index", index)
+                t = self.text.get(1.0,'end')
+                print( t[:index] + "@" + t[index:])
+            self.root.after(0,d)
 
-        self.redraw()
-        print(self.text.get(1.0,'end'))
 
 if __name__ == '__main__':
     r = RopesViz()
