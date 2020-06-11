@@ -66,10 +66,14 @@ class Rope:
             else:
                 self.position = None
 
+        print("left_length", self.left_length)
+        print("total_lenth", self.total_lenth)
+        print("position", self.position)
+
         if self.left_length == 0:
             self.replace(self.right_branch)
         elif self.left_length == self.total_lenth:
-            self.replace(self.left_length)
+            self.replace(self.left_branch)
 
         if self.depth == 1 and self.total_lenth <= self.MAX_LEAF:
             self.merge()
@@ -81,6 +85,8 @@ class Rope:
         self.total_lenth  = node.total_lenth
         self.depth        = node.depth
         self.position     = node.position
+
+        self.leaf_str     = node.leaf_str
         self.left_length  = node.left_length
         self.left_branch  = node.left_branch
         self.right_branch = node.right_branch
@@ -89,6 +95,11 @@ class Rope:
         self.depth = 0
         self.leaf_str = self.left_branch.leaf_str + self.right_branch.leaf_str
         self.total_lenth = len(self.leaf_str)
+
+        if self.left_branch.position is not None:
+            self.position = self.left_branch.position
+        elif self.right_branch.position is not None:
+            self.position = self.right_branch.position + self.left_length
 
         self.left_length = None
         self.left_branch = None
@@ -128,7 +139,7 @@ class Rope:
         return self.parent.left_branch is self
 
     def get_leafs(self):
-        if self.leaf_str != None:
+        if self.is_leaf():
             yield self.leaf_str
 
         else:
