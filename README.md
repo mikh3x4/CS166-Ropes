@@ -1,11 +1,11 @@
 Rope Vizualization
 ---
 
-This is a small GUI vizalization of how the datastructures behind a rope backed text editor would work. The balancing scheme is taken from the original paper that introduced ropes ([Ropes: an Alternative to Strings](https://www.cs.rit.edu/usr/local/pub/jeh/courses/QUARTERS/FP/Labs/CedarRope/rope-paper.pdf)).
+This is a small GUI vizalization of how the datastructures behind a rope backed text editor would work. The balancing scheme is taken from the original paper that introduced ropes ([Ropes: an Alternative to Strings](https://www.cs.rit.edu/usr/local/pub/jeh/courses/QUARTERS/FP/Labs/CedarRope/rope-paper.pdf)). Currently the max leaf size is set to 5 characters for demonstration purposes, but it can be easily chagned in the code.
 
-This project was done for Stanford's [CS166](http://cs166.stanford.edu) datastructures class
+This project was done for Stanford's [CS166](http://cs166.stanford.edu) datastructures class.
 
-IMAGE
+![Screenshot](https://github.com/mikh3x4/CS166-Ropes/raw/master/images/screenshot.png)
 
 Features
 ---
