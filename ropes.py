@@ -14,28 +14,33 @@ class Rope:
         self.total_lenth = len(string) # total length of rope
         self.depth = 0                 # max depth of rope
         self.parent = parent           # pointer to parent node
+        self.position = None           # current position inside the string
+                                       # \-> None if not in current branch
 
-        self.left_length = 0           # length of leafs in left subtree
+        self.left_length = None        # length of rope in left subtree
         self.left_branch = None        # pointer to left branch
         self.right_branch = None       # pointer to right branch
 
-        self.leaf_str = string         # leaf string
-        self.position = None           # current position inside the string
-                                       # \-> None if not in current branch
+        self.leaf_str = string.replace(" ","_")
 
         #split and rebalance
         if len(self.leaf_str) > self.MAX_LEAF:
             self.split()
 
     def update(self):
-        if self.is_leaf():
-            return
+        if not self.is_leaf():
+            self.left_length = self.left_branch.total_lenth
+            self.total_lenth = self.left_branch.total_lenth \
+                             + self.right_branch.total_lenth
 
-        self.left_length = self.left_branch.total_lenth
-        self.total_lenth = self.left_branch.total_lenth \
-                         + self.right_branch.total_lenth
+            self.depth = max(self.left_branch.depth, self.right_branch.depth) + 1
 
-        self.depth = max(self.left_branch.depth, self.right_branch.depth) + 1
+            if self.left_branch.position is not None:
+                self.position = self.left_branch.position
+            elif self.right_branch.position is not None:
+                self.position = self.right_branch.position + self.left_length
+            else:
+                self.position = None
 
         if self.parent != None:
             self.parent.update()
@@ -53,7 +58,7 @@ class Rope:
         self.right_branch = Rope(right, self)
 
         if self.position is not None:
-            if self.position < midpoint:
+            if self.position <= midpoint:
                 self.left_branch.position = self.position
             else:
                 self.right_branch.position = self.position - midpoint
@@ -73,7 +78,7 @@ class Rope:
                 self.left_branch.move_cursor(None)
                 self.right_branch.move_cursor(None)
 
-            elif i < self.left_length:
+            elif i <= self.left_length:
                 self.left_branch.move_cursor(i)
                 self.right_branch.move_cursor(None)
             else:
@@ -84,22 +89,26 @@ class Rope:
         assert self.position is not None
 
         if self.is_leaf():
+            char = char.replace(" ","_")
             self.leaf_str = self.leaf_str[:self.position] \
                             + char \
                             + self.leaf_str[self.position:]
+            self.position += 1
+            self.total_lenth = len(self.leaf_str)
 
             if len(self.leaf_str) > self.MAX_LEAF:
                 self.split()
+            else:
+                self.update()
 
         else:
-            if self.position < self.left_length:
+            if self.position <= self.left_length:
                 self.left_branch.add_character(char)
-                self.left_length += 1
             else:
                 self.right_branch.add_character(char)
 
-        self.total_lenth += 1
-        self.position += 1
+        print("added", char, "to node depth", 
+              self.depth, "with new pos", self.position)
 
     def remove_character(self, i):
         pass
@@ -133,10 +142,13 @@ class Rope:
         col = "#FFAAAA" if self.position is not None else "#AAAAFF"
 
         if self.is_leaf():
-            graph.add_node(id(self), label=self.leaf_str, pos=loc, col = col)
+            graph.add_node(id(self), 
+                           label=str(self.total_lenth)+self.leaf_str,
+                                                          pos=loc, col = col)
         else:
-        
-            graph.add_node(id(self), label='b', pos=loc, col=col)
+            graph.add_node(id(self),
+                           label=str(self.left_length)+","+str(self.total_lenth), 
+                                                          pos=loc, col=col)
             offset = 2**(self.depth)
             self.left_branch.add_to_graph(graph,
                                           (loc[0] - offset, loc[1]-1))
@@ -171,7 +183,7 @@ class RopesViz:
         self.fig = Figure(figsize=(5, 4))
         self.ax = self.fig.add_subplot(111)
 
-        default_text = "This_is_a_t"
+        default_text = "This is a t"
         self.rope = Rope(default_text)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -228,18 +240,17 @@ class RopesViz:
             print("adding char")
             self.rope.add_character(event.char)
             self.redraw()
-            t = self.text.get(1.0,'end')
-            print( t[:index] + "@" + t[index:])
 
-        if index != self.rope.position:
-            def d():
-                index =  int(self.text.index("insert").split('.')[1])
+        def d():
+            index =  int(self.text.index("insert").split('.')[1])
+            if index != self.rope.position:
                 self.rope.move_cursor(index)
                 self.redraw()
                 print("updated index", index)
-                t = self.text.get(1.0,'end')
-                print( t[:index] + "@" + t[index:])
-            self.root.after(0,d)
+
+            t = self.text.get(1.0,'end')
+            print( t[:index] + "@" + t[index:])
+        self.root.after(0,d)
 
 
 if __name__ == '__main__':
