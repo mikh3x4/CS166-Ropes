@@ -20,7 +20,7 @@ class Rope:
         self.right_branch = None       # pointer to right branch
 
         self.leaf_str = string         # leaf string
-        self.leaf_position = 0         # current position inside the string
+        self.position = None           # current position inside the string
                                        # \-> None if not in current branch
 
         #split and rebalance
@@ -44,49 +44,67 @@ class Rope:
         assert self.is_leaf()
 
         length = len(self.leaf_str)
+        midpoint = length//2
 
-        left  = self.leaf_str[:length//2]
-        right = self.leaf_str[length//2:]
+        left  = self.leaf_str[:midpoint]
+        right = self.leaf_str[midpoint:]
 
         self.left_branch = Rope(left, self)
         self.right_branch = Rope(right, self)
 
+        if self.position is not None:
+            if self.position < midpoint:
+                self.left_branch.position = self.position
+            else:
+                self.right_branch.position = self.position - midpoint
+
         self.leaf_str = None
         self.update()
-
-    def substring(self, i, j):
-        pass
-
-    def move_cursor(self, i):
-        if self.is_leaf():
-            self.leaf_position = i
-
-        else:
-            if i < self.left_length:
-                self.left_branch.move_cursor(i)
-            else:
-                self.right_branch.move_cursor(i - self.left_length)
-
-    def add_character(self, i, char):
-        total_lenth += 1
-        if self.is_leaf():
-            self.leaf_str += char
-            if len(self.leaf_str) > self.MAX_LEAF:
-                self.split()
-
-        else:
-            if i < self.left_length:
-                self.left_length += 1
-                self.left_branch.add_character(i, char)
-            else:
-                self.right_branch.add_character(i - self.left_length, char)
-
-    def remove_character(self, i):
-        pass
 
     def rebalance(self):
         pass
 
+    ## EDITING METHODS
+    def move_cursor(self, i):
+        self.position = i
+
+        if not self.is_leaf():
+            if i is None:
+                self.left_branch.move_cursor(None)
+                self.right_branch.move_cursor(None)
+
+            elif i < self.left_length:
+                self.left_branch.move_cursor(i)
+                self.right_branch.move_cursor(None)
+            else:
+                self.right_branch.move_cursor(i - self.left_length)
+                self.left_branch.move_cursor(None)
+
+    def add_character(self, char):
+        assert self.position is not None
+
+        if self.is_leaf():
+            self.leaf_str = self.leaf_str[:self.position] \
+                            + char \
+                            + self.leaf_str[self.position:]
+
+            if len(self.leaf_str) > self.MAX_LEAF:
+                self.split()
+
+        else:
+            if self.position < self.left_length:
+                self.left_branch.add_character(char)
+                self.left_length += 1
+            else:
+                self.right_branch.add_character(char)
+
+        self.total_lenth += 1
+        self.position += 1
+
+    def remove_character(self, i):
+        pass
+
+    ## CHECK STATES
     def is_balanced(self):
         return self.fibonacci(self.depth + 2) <= self.left_length
 
@@ -104,6 +122,7 @@ class Rope:
             yield from self.left_branch.get_leafs()
             yield from self.right_branch.get_leafs()
 
+    ## GRAPH DRAWING
     def get_graph(self):
         graph = nx.DiGraph()
         self.add_to_graph(graph, (0,0) )
@@ -111,11 +130,13 @@ class Rope:
             
     def add_to_graph(self, graph, loc):
 
+        col = "#FFAAAA" if self.position is not None else "#AAAAFF"
+
         if self.is_leaf():
-            graph.add_node(id(self), label=self.leaf_str, pos=loc, col = "red")
+            graph.add_node(id(self), label=self.leaf_str, pos=loc, col = col)
         else:
         
-            graph.add_node(id(self), label='test', pos=loc, col="blue")
+            graph.add_node(id(self), label='b', pos=loc, col=col)
             offset = 2**(self.depth)
             self.left_branch.add_to_graph(graph,
                                           (loc[0] - offset, loc[1]-1))
@@ -125,7 +146,7 @@ class Rope:
             graph.add_edge( id(self), id(self.left_branch) )
             graph.add_edge( id(self), id(self.right_branch) )
 
-    
+    ## FIBONACCI HELPER
     
     fib_store = [0, 1]
     @classmethod
@@ -147,40 +168,49 @@ class RopesViz:
         self.root = tk.Tk()
         self.root.title("Ropes")
 
-        fig = Figure(figsize=(5, 4))
-        ax = fig.add_subplot(111)
+        self.fig = Figure(figsize=(5, 4))
+        self.ax = self.fig.add_subplot(111)
 
-        self.rope = Rope("This is a long test Magic hello")
+        default_text = "This_is_a_t"
+        self.rope = Rope(default_text)
 
-        for leaf in self.rope.get_leafs():
-            print(leaf)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        self.text = tk.Text(self.root)
+        self.text.pack()
+        self.text.insert('0.0', default_text)
+
+        self.text.bind('<Key>', self.process_event)
+        self.text.bind('<Button-1>', self.mouse_click)
+
+        self.redraw()
+        self.root.mainloop()
+
+
+    def redraw(self):
         graph = self.rope.get_graph()
 
         pos   = { n:graph.nodes[n]['pos'] for n in graph.nodes()  } 
         lab = { n:graph.nodes[n]['label'] for n in graph.nodes()  } 
         col =   [graph.nodes[n]['col'] for n in graph.nodes()]
 
-        nx.draw(graph,pos,ax,with_labels=True, node_color = col, labels = lab)
+        self.ax.clear()
+        nx.draw(graph,pos,self.ax,with_labels=True, node_color = col, labels = lab)
+        self.canvas.draw()
 
-        canvas = FigureCanvasTkAgg(fig, master=self.root)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
-
-        self.text = tk.Text(self.root)
-        self.text.pack()
-
-        self.text.bind('<Key>', self.process_event)
-
-        self.root.mainloop()
-
+    def mouse_click(self,event):
+        self.rope.move_cursor( int(self.text.index("insert").split('.')[1]))
+        self.redraw()
 
     def process_event(self, event):
-        print(event.char)
-        print(self.text.index("insert"))
+        if( event.char.isprintable() and len(event.char)==1 ):
+            self.rope.add_character(event.char)
+
+        self.rope.move_cursor( int(self.text.index("insert").split('.')[1]))
+
+        self.redraw()
         print(self.text.get(1.0,'end'))
-        pass
 
 if __name__ == '__main__':
     r = RopesViz()
