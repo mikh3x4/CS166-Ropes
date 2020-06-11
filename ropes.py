@@ -91,8 +91,17 @@ class Rope:
         self.leaf_str = None
         self.update()
 
+    ## BALANCING METHODS
     def rebalance(self):
         pass
+
+    def get_balanced_subropes(self):
+        if self.is_balanced():
+            yield self
+
+        else:
+            yield from self.left_branch.get_balanced_subropes()
+            yield from self.right_branch.get_balanced_subropes()
 
     ## EDITING METHODS
     def move_cursor(self, i):
@@ -159,7 +168,9 @@ class Rope:
 
     ## CHECK STATES
     def is_balanced(self):
-        return self.fibonacci(self.depth + 2) <= self.left_length
+        if self.is_leaf():
+            assert self.fibonacci(self.depth + 2) <= self.total_lenth
+        return self.fibonacci(self.depth + 2) <= self.total_lenth
 
     def is_leaf(self):
         return self.leaf_str != None
@@ -258,7 +269,8 @@ class RopesViz:
         col =   [graph.nodes[n]['col'] for n in graph.nodes()]
 
         self.ax.clear()
-        nx.draw(graph,pos,self.ax,with_labels=True, node_color = col, labels = lab)
+        nx.draw(graph,pos,self.ax,with_labels=True, node_color = col,labels = lab,
+            node_shape = 's', font_size = 10, node_size = 500)
         self.canvas.draw()
 
     # tkinter Text Widget processes callbacks after "normal" character events
